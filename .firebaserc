@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "default": "reportflow-demo"
+  },
+  "targets": {
+    "reportflow-demo": {
+      "hosting": {
+        "staging": ["reportflow-staging"],
+        "production": ["reportflow"]
+      }
+    }
+  }
+}
