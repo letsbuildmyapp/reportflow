@@ -1,177 +1,211 @@
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useState } from 'react';
-import { useAuth } from '../lib/auth';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 import { toast } from 'sonner';
-import { Loader2, FileText, LogIn, ChevronRight } from 'lucide-react';
+import { ArrowRight, Loader2, FileText, ShieldCheck, Briefcase } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
-  { email: 'demo@reportflow.app',  name: 'Demo Adjuster',   title: 'Senior Claims Adjuster' },
-  { email: 'avery@reportflow.app', name: 'Avery Patel',     title: 'Auto Claims Specialist' },
-  { email: 'rowan@reportflow.app', name: 'Rowan Kim',       title: 'Property Claims Lead' },
+const DEMO_PASSWORD = 'demo1234';
+
+const DEMO_LOGINS = [
+  {
+    email: 'demo@reportflow.app',
+    password: DEMO_PASSWORD,
+    label: 'Demo Adjuster',
+    description: 'Senior Claims Adjuster',
+    icon: ShieldCheck,
+    color: 'from-indigo-500 to-violet-500',
+  },
+  {
+    email: 'avery@reportflow.app',
+    password: DEMO_PASSWORD,
+    label: 'Avery Patel',
+    description: 'Auto Claims Specialist',
+    icon: Briefcase,
+    color: 'from-emerald-500 to-teal-500',
+  },
+  {
+    email: 'rowan@reportflow.app',
+    password: DEMO_PASSWORD,
+    label: 'Rowan Kim',
+    description: 'Property Claims Lead',
+    icon: FileText,
+    color: 'from-amber-500 to-orange-500',
+  },
 ];
 
-const schema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(6, 'At least 6 characters'),
-});
-
-type FormData = z.infer<typeof schema>;
-
 export function Login() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp } = useAuth();
   const nav = useNavigate();
   const loc = useLocation();
   const dest = (loc.state as any)?.from || '/dashboard';
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    setValue,
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
 
-  const onSubmit = async (data: FormData) => {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
     try {
-      if (mode === 'signin') await signIn(data.email, data.password);
-      else await signUp(data.email, data.password);
-      toast.success(mode === 'signin' ? 'Welcome back!' : 'Account created');
-      nav(dest, { replace: true });
-    } catch (e: any) {
-      toast.error(e?.message ?? 'Authentication failed');
-    }
-  };
-
-  const [quickBusy, setQuickBusy] = useState<string | null>(null);
-
-  const quickSignIn = async (email: string) => {
-    setQuickBusy(email);
-    try {
-      try {
-        await signIn(email, 'demo1234');
-      } catch {
-        await signUp(email, 'demo1234');
-      }
+      await signIn(email, password);
       toast.success('Welcome back!');
       nav(dest, { replace: true });
     } catch (e: any) {
       toast.error(e?.message ?? 'Sign-in failed');
     } finally {
-      setQuickBusy(null);
+      setLoading(false);
     }
-  };
+  }
+
+  async function onDemoLogin(d: (typeof DEMO_LOGINS)[number]) {
+    setEmail(d.email);
+    setPassword(d.password);
+    setDemoLoading(d.email);
+    try {
+      try {
+        await signIn(d.email, d.password);
+      } catch {
+        await signUp(d.email, d.password);
+      }
+      toast.success(`Signed in as ${d.label}`);
+      nav(dest, { replace: true });
+    } catch (e: any) {
+      toast.error(e?.message ?? 'Sign-in failed');
+    } finally {
+      setDemoLoading(null);
+    }
+  }
 
   return (
-    <div className="max-w-md mx-auto pt-8 sm:pt-16">
-      <div className="text-center mb-8">
-        <div className="size-14 mx-auto rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 grid place-items-center mb-4 shadow-lg shadow-brand-500/30">
-          <FileText className="size-7 text-white" strokeWidth={2.25} />
-        </div>
-        <h1 className="font-display text-3xl font-bold">{mode === 'signin' ? 'Welcome back' : 'Create your account'}</h1>
-        <p className="text-muted mt-1">to ReportFlow</p>
-      </div>
-
-      <div className="glass-strong rounded-3xl p-6 sm:p-8">
-        <button
-          onClick={async () => {
-            try {
-              await signInWithGoogle();
-              nav(dest, { replace: true });
-            } catch (e: any) {
-              toast.error(e?.message ?? 'Google sign-in failed');
-            }
-          }}
-          className="btn-secondary w-full !py-3 mb-5"
-        >
-          <LogIn className="size-4" />
-          Continue with Google
-        </button>
-
-        <div className="flex items-center gap-3 mb-5">
-          <div className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
-          <span className="eyebrow">or email</span>
-          <div className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium block mb-1.5">Email</label>
-            <input
-              {...register('email')}
-              type="email"
-              autoComplete="email"
-              className="glass-input w-full rounded-2xl px-4 py-2.5"
-              placeholder="you@company.com"
-            />
-            {errors.email && <p className="text-footnote text-red-700 dark:text-red-300 mt-1.5 font-medium">{errors.email.message}</p>}
+    <div className="relative flex min-h-screen flex-col">
+      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10">
+        <Link to="/" className="flex items-center gap-2 font-semibold">
+          <div className="size-7 rounded-md bg-gradient-to-br from-brand-500 to-accent-500 grid place-items-center shadow-lg shadow-brand-500/30">
+            <FileText className="size-4 text-white" strokeWidth={2.5} />
           </div>
-          <div>
-            <label className="text-sm font-medium block mb-1.5">Password</label>
-            <input
-              {...register('password')}
-              type="password"
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              className="glass-input w-full rounded-2xl px-4 py-2.5"
-              placeholder="••••••••"
-            />
-            {errors.password && <p className="text-footnote text-red-700 dark:text-red-300 mt-1.5 font-medium">{errors.password.message}</p>}
-          </div>
-          <button type="submit" disabled={isSubmitting} className="btn-primary w-full !py-3">
-            {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-            {mode === 'signin' ? 'Sign in' : 'Create account'}
-          </button>
-        </form>
-
-        <div className="mt-5 text-sm">
-          <button
-            onClick={() => setMode((m) => (m === 'signin' ? 'signup' : 'signin'))}
-            className="text-brand-600 hover:underline"
+          <span className="tracking-tight">ReportFlow</span>
+        </Link>
+        <span className="text-xs text-muted">
+          Need help?{' '}
+          <a
+            href="mailto:hello@letsbuildmyapp.com?subject=ReportFlow%20support"
+            className="text-foreground underline-offset-4 hover:underline"
           >
-            {mode === 'signin' ? 'Need an account?' : 'Have an account?'}
-          </button>
-        </div>
-      </div>
+            Contact support
+          </a>
+        </span>
+      </header>
 
-      {/* Demo accounts */}
-      <div className="glass-strong rounded-3xl p-6 sm:p-8 mt-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
-          <span className="eyebrow">demo accounts</span>
-          <div className="h-px flex-1 bg-ink-200 dark:bg-ink-700" />
-        </div>
-        <p className="text-sm text-muted mb-4">One-click sign-in. Each adjuster sees the same seeded reports.</p>
-        <div className="space-y-2">
-          {DEMO_ACCOUNTS.map((u) => (
-            <button
-              key={u.email}
-              type="button"
-              onClick={() => quickSignIn(u.email)}
-              disabled={quickBusy !== null}
-              className="w-full flex items-center gap-3 rounded-2xl border border-ink-200/70 dark:border-ink-700/70 bg-white/60 dark:bg-ink-800/40 hover:bg-white dark:hover:bg-ink-800/70 transition-colors px-4 py-3 text-left disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <div className="size-9 rounded-xl bg-gradient-to-br from-brand-500/20 to-accent-500/20 border border-brand-500/30 grid place-items-center text-sm font-semibold text-brand-700 dark:text-brand-300 shrink-0">
-                {u.name.split(' ').map((p) => p[0]).join('').slice(0, 2)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold truncate">{u.name}</div>
-                <div className="text-xs text-muted truncate">{u.title} · {u.email}</div>
-              </div>
-              {quickBusy === u.email ? (
-                <Loader2 className="size-4 animate-spin text-muted shrink-0" />
-              ) : (
-                <ChevronRight className="size-4 text-muted shrink-0" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-[440px]"
+        >
+          <div className="glass-strong rounded-3xl p-8 shadow-2xl">
+            <div className="space-y-1.5">
+              <h1 className="font-display text-2xl font-semibold tracking-tight">Sign in to ReportFlow</h1>
+              <p className="text-sm text-muted">
+                New here?{' '}
+                <button
+                  type="button"
+                  onClick={() => onDemoLogin(DEMO_LOGINS[0])}
+                  className="font-medium text-brand-600 underline-offset-4 hover:underline"
+                >
+                  Try a demo account
+                </button>
+              </p>
+            </div>
 
-      <p className="text-center text-footnote text-muted mt-6">
-        <Link to="/" className="hover:underline">← Back to home</Link>
-      </p>
+            <div className="my-6 grid gap-2">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  One-click demo logins
+                </span>
+                <span className="text-[10px] text-muted">No password needed</span>
+              </div>
+              {DEMO_LOGINS.map((d) => (
+                <button
+                  key={d.email}
+                  type="button"
+                  onClick={() => onDemoLogin(d)}
+                  disabled={demoLoading !== null || loading}
+                  className="group flex items-center gap-3 rounded-2xl border border-ink-200/70 dark:border-ink-700/70 bg-white/60 dark:bg-ink-800/40 hover:bg-white dark:hover:bg-ink-800/70 p-3 text-left transition-all disabled:opacity-50"
+                >
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${d.color} text-white shadow-sm`}>
+                    <d.icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{d.label}</div>
+                    <div className="truncate text-xs text-muted">{d.description}</div>
+                  </div>
+                  {demoLoading === d.email ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-ink-200 dark:border-ink-700" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase tracking-wider">
+                <span className="px-3 text-muted bg-[var(--glass-bg,transparent)]">or sign in with email</span>
+              </div>
+            </div>
+
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium block mb-1.5">Email</label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="glass-input w-full rounded-2xl px-4 py-2.5"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium">Password</label>
+                  <Link to="/forgot-password" className="text-xs text-muted hover:underline">Forgot?</Link>
+                </div>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="glass-input w-full rounded-2xl px-4 py-2.5"
+                  placeholder="••••••••"
+                />
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary w-full !py-3">
+                {loading ? <Loader2 className="size-4 animate-spin" /> : 'Sign in'}
+              </button>
+            </form>
+          </div>
+        </motion.div>
+      </main>
+
+      <footer className="relative z-10 px-6 pb-8 text-center text-xs text-muted sm:px-10">
+        <a
+          href="https://letsbuildmyapp.com"
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          Let&apos;s Build My App
+        </a>
+      </footer>
     </div>
   );
 }
