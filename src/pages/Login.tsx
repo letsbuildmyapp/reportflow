@@ -80,7 +80,7 @@ export function Login() {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-10">
+      <main className="relative z-10 flex flex-1 items-start justify-center px-6 pt-8 sm:pt-12 pb-10">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
