@@ -80,24 +80,6 @@ export function Login() {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10">
-        <Link to="/" className="flex items-center gap-2 font-semibold">
-          <div className="size-7 rounded-md bg-gradient-to-br from-brand-500 to-accent-500 grid place-items-center shadow-lg shadow-brand-500/30">
-            <FileText className="size-4 text-white" strokeWidth={2.5} />
-          </div>
-          <span className="tracking-tight">ReportFlow</span>
-        </Link>
-        <span className="text-xs text-muted">
-          Need help?{' '}
-          <a
-            href="mailto:hello@letsbuildmyapp.com?subject=ReportFlow%20support"
-            className="text-foreground underline-offset-4 hover:underline"
-          >
-            Contact support
-          </a>
-        </span>
-      </header>
-
       <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-10">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
