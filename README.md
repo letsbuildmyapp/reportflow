@@ -17,7 +17,6 @@ Demo product by [letsbuildmyapp.com](https://letsbuildmyapp.com). Upload claim d
 - Tailwind CSS v3 + custom glass primitives (no shadcn dependency for speed; primitives mimic that DX)
 - React Router v7, TanStack Query, react-hook-form + zod, Framer Motion, lucide-react, sonner
 - Firebase: Auth, Firestore, Storage, Cloud Functions (Node 20, TypeScript), Hosting
-- `@anthropic-ai/sdk` (Cloud Function only — never bundled in the browser)
 - `@react-pdf/renderer` for PDF export
 
 ## Run locally (against Firebase emulators)
@@ -29,10 +28,10 @@ npm install
 # 2. Install + build functions
 cd functions && npm install && npm run build && cd ..
 
-# 3. (Optional) Set the Anthropic key for real AI extraction. Without it the function
+# 3. (Optional) Set the LLM API key for real AI extraction. Without it the function
 #    returns realistic fixture data so the demo never errors out.
 cp functions/.env.example functions/.env
-# then edit functions/.env to add ANTHROPIC_API_KEY=sk-ant-...
+# then edit functions/.env to add LLM_API_KEY=sk-...
 
 # 4. Start the Firebase emulator suite (Auth, Firestore, Storage, Functions, Hosting UI)
 npx firebase emulators:start
@@ -56,8 +55,8 @@ The Firebase emulator UI is at <http://localhost:4000>.
 4. Function:
    - Pulls each file from Storage.
    - Builds a multimodal user message (image blocks for photos, document blocks for PDFs, text for txt/json).
-   - Calls Anthropic with `claude-sonnet-4-6` by default (or `claude-opus-4-7` when more than 3 source files), prompt caching enabled on the system prompt, and a JSON-schema-constrained `output_config.format`.
-   - If `ANTHROPIC_API_KEY` is unset, returns fixture data (so the demo never errors).
+   - Calls the LLM provider with `the standard model` by default (or `the frontier model` when more than 3 source files), prompt caching enabled on the system prompt, and a JSON-schema-constrained `output_config.format`.
+   - If `LLM_API_KEY` is unset, returns fixture data (so the demo never errors).
    - Writes the result back to Firestore; status becomes `ready` or `error`.
 5. Frontend (`/report/:id`) subscribes via `onSnapshot` — UI shows live processing animation, then editable form.
 6. User edits any field, clicks **Export PDF** — `@react-pdf/renderer` generates the PDF in-browser, uploads to Storage, and downloads locally.
@@ -77,13 +76,13 @@ When ready to deploy to a real Firebase project:
    ```
 
 5. Copy your project's web config into `.env.local` (use `.env.example` as a template) and set `VITE_USE_EMULATOR=false`.
-6. Set the Anthropic key as a Functions secret:
+6. Set the LLM API key as a Functions secret:
 
    ```bash
-   npx firebase functions:secrets:set ANTHROPIC_API_KEY
+   npx firebase functions:secrets:set LLM_API_KEY
    ```
 
-   Then update `functions/src/index.ts` to declare the secret on the function (`secrets: ['ANTHROPIC_API_KEY']`) before deploying.
+   Then update `functions/src/index.ts` to declare the secret on the function (`secrets: ['LLM_API_KEY']`) before deploying.
 7. Deploy to **staging first** (per project rule):
 
    ```bash

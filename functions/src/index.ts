@@ -116,7 +116,7 @@ export const processReport = onCall<ProcessReportData>(
 
       if (useFixture) {
         // No API key — return realistic fixture so the demo doesn't error.
-        await new Promise((r) => setTimeout(r, 2200));
+        await new Promise((r) => setTimeout(r, 5000));
         extracted = extractedReportFixture(report.title);
       } else {
         const client = new Anthropic({ apiKey });
